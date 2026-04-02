@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Hive</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      font-size: 13px;
+      color: #e0e0e0;
+      background: #1e1e1e;
+      -webkit-app-region: drag;
+      user-select: none;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    .header h1 { font-size: 14px; font-weight: 600; color: #fff; }
+
+    .header .badge {
+      background: #f5a623;
+      color: #000;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .section-label {
+      padding: 10px 16px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    #activeSection {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #sessionList {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .empty {
+      padding: 24px 16px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .session {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      -webkit-app-region: no-drag;
+      transition: background 0.1s;
+    }
+
+    .session.clickable { cursor: pointer; }
+    .session.clickable:hover { background: #2a2a2a; }
+
+    .session .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .dot.working { background: #4caf50; }
+    .dot.waiting { background: #f5a623; animation: pulse 1.5s infinite; }
+    .dot.stopped { background: #888; }
+    .dot.stopped-new { background: #5b9bd5; animation: pulse 1.5s infinite; }
+    .dot.done { background: #444; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .session .info { flex: 1; min-width: 0; }
+
+    .session .info .name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session .info .detail {
+      font-size: 11px;
+      color: #888;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session .info .path {
+      font-size: 10px;
+      color: #555;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session .right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+      margin-left: 8px;
+      gap: 2px;
+    }
+
+    .status-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .status-tag.working { background: #1b3a1b; color: #4caf50; }
+    .status-tag.waiting { background: #3a2e1b; color: #f5a623; }
+    .status-tag.stopped { background: #2a2a2a; color: #888; }
+    .status-tag.stopped-new { background: #1b2a3a; color: #5b9bd5; }
+    .status-tag.done { background: #222; color: #555; }
+
+    .jump-tag { font-size: 10px; color: #666; }
+    .jump-tag.can-jump { color: #5b9bd5; }
+
+    .footer {
+      padding: 8px 16px;
+      border-top: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .footer a, .footer-toggle {
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+      text-decoration: none;
+    }
+    .footer a:hover, .footer-toggle:hover { color: #fff; }
+
+    .history-dropdown {
+      display: none;
+      position: absolute;
+      bottom: 32px;
+      left: 0;
+      right: 0;
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 6px;
+      margin: 0 8px;
+      max-height: 192px;
+      overflow-y: auto;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+    }
+    .history-dropdown.open { display: block; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+      transition: background 0.1s;
+    }
+    .history-item:hover { background: #2e2e2e; }
+
+    .history-item .hi-name {
+      font-size: 12px;
+      color: #ccc;
+      font-weight: 500;
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .history-item .hi-path {
+      font-size: 10px;
+      color: #555;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-item .hi-time {
+      font-size: 10px;
+      color: #555;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Code Hive</h1>
+    <span class="badge" id="waitingBadge" style="display:none"></span>
+  </div>
+
+  <div id="activeSection">
+    <div class="section-label">Active Sessions</div>
+    <div id="sessionList"></div>
+  </div>
+
+  <div class="footer">
+    <div id="historySection" style="display:none">
+      <a class="footer-toggle" id="historyToggle">Recent ▸</a>
+      <div id="historyList" class="history-dropdown"></div>
+    </div>
+    <a id="refreshBtn">Refresh</a>
+  </div>
+
+  <script>
+    function timeAgo(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "just now";
+      if (mins < 60) return mins + "m";
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + "h" + (mins % 60 > 0 ? (mins % 60) + "m" : "");
+      return Math.floor(hours / 24) + "d ago";
+    }
+
+    function shortPath(fullPath) {
+      return fullPath.replace(/^\/Users\/[^/]+/, "~");
+    }
+
+    // Safe DOM element creation (no innerHTML XSS)
+    function el(tag, attrs, ...children) {
+      const e = document.createElement(tag);
+      if (attrs) {
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "className") e.className = v;
+          else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
+          else e.setAttribute(k, v);
+        }
+      }
+      for (const c of children) {
+        if (typeof c === "string") e.appendChild(document.createTextNode(c));
+        else if (c) e.appendChild(c);
+      }
+      return e;
+    }
+
+    function renderSession(s) {
+      const isNewStopped = s.status === "stopped" && !s.acknowledged;
+      const dotClass = isNewStopped ? "stopped-new" : s.status;
+      const tagClass = isNewStopped ? "stopped-new" : s.status;
+      const tagText = isNewStopped ? "Finished"
+        : { working: "Working", waiting: "Waiting", stopped: "Stopped", done: "Done" }[s.status] || s.status;
+
+      const dur = timeAgo(s.startedAt);
+      const detail = s.waitReason === "permission_prompt"
+        ? s.tool + " · Needs approval"
+        : isNewStopped
+        ? s.tool + " · Just finished"
+        : s.tool + " · " + dur;
+
+      const hasTty = !!s.tty;
+      const clickable = hasTty || isNewStopped;
+
+      const onClick = clickable ? () => {
+        if (isNewStopped && hasTty) {
+          window.hive.acknowledge(s.id).then(() => window.hive.openProject(s.project, s.tty));
+        } else if (hasTty) {
+          window.hive.openProject(s.project, s.tty);
+        } else if (isNewStopped) {
+          window.hive.acknowledge(s.id);
+        }
+      } : null;
+
+      return el("div", { className: "session" + (clickable ? " clickable" : ""), ...(onClick ? { onclick: onClick } : {}) },
+        el("div", { className: "dot " + dotClass }),
+        el("div", { className: "info" },
+          el("div", { className: "name" }, s.projectName),
+          el("div", { className: "detail" }, detail),
+          el("div", { className: "path" }, shortPath(s.project))
+        ),
+        el("div", { className: "right" },
+          el("span", { className: "status-tag " + tagClass }, tagText),
+          hasTty
+            ? el("span", { className: "jump-tag can-jump" }, "↗ Jump")
+            : el("span", { className: "jump-tag" }, "Cannot locate")
+        )
+      );
+    }
+
+    function renderHistoryItem(s) {
+      return el("div", { className: "history-item", onclick: () => window.hive.openProject(s.project) },
+        el("span", { className: "hi-name" }, s.projectName),
+        el("span", { className: "hi-path" }, shortPath(s.project)),
+        el("span", { className: "hi-time" }, timeAgo(s.lastActivity))
+      );
+    }
+
+    function render(data) {
+      const { sessions, history } = data;
+
+      function sortKey(s) {
+        if (s.status === "waiting") return 0;
+        if (s.status === "stopped" && !s.acknowledged) return 1;
+        if (s.status === "working") return 2;
+        if (s.status === "stopped") return 3;
+        return 4;
+      }
+      sessions.sort((a, b) => sortKey(a) - sortKey(b));
+
+      const listEl = document.getElementById("sessionList");
+      const historyEl = document.getElementById("historyList");
+      const historySec = document.getElementById("historySection");
+      const badge = document.getElementById("waitingBadge");
+
+      listEl.replaceChildren();
+      if (sessions.length === 0) {
+        listEl.appendChild(el("div", { className: "empty" }, "No active sessions"));
+      } else {
+        sessions.forEach(s => listEl.appendChild(renderSession(s)));
+      }
+
+      const waitingCount = sessions.filter(s => s.status === "waiting").length;
+      const newStoppedCount = sessions.filter(s => s.status === "stopped" && !s.acknowledged).length;
+      const attentionCount = waitingCount + newStoppedCount;
+      if (attentionCount > 0) {
+        const parts = [];
+        if (waitingCount > 0) parts.push(waitingCount + " waiting");
+        if (newStoppedCount > 0) parts.push(newStoppedCount + " finished");
+        badge.textContent = parts.join(", ");
+        badge.style.display = "inline";
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (history && history.length > 0) {
+        historySec.style.display = "block";
+        historyEl.replaceChildren();
+        history.forEach(s => historyEl.appendChild(renderHistoryItem(s)));
+      } else {
+        historySec.style.display = "none";
+      }
+    }
+
+    // Recent: hover to show, leave to hide
+    const historySec = document.getElementById("historySection");
+    const historyList = document.getElementById("historyList");
+    const historyToggle = document.getElementById("historyToggle");
+
+    historySec.addEventListener("mouseenter", () => {
+      historyList.classList.add("open");
+      historyToggle.textContent = "Recent ▾";
+    });
+    historySec.addEventListener("mouseleave", () => {
+      historyList.classList.remove("open");
+      historyToggle.textContent = "Recent ▸";
+    });
+
+    // Refresh button
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      window.hive.getSessions().then(render);
+    });
+
+    // Initial load
+    window.hive.getSessions().then(render);
+
+    // Live updates (single listener, no accumulation)
+    window.hive.onSessionsUpdate(render);
+  </script>
+</body>
+</html>

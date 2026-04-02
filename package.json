@@ -1,0 +1,29 @@
+{
+  "name": "code-hive",
+  "version": "0.1.0",
+  "description": "AI CLI session manager for macOS",
+  "type": "module",
+  "bin": {
+    "hive": "./dist/cli/index.js"
+  },
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.electron.json",
+    "build:cli": "tsc",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "dev": "tsc --watch",
+    "app": "npm run build:electron && electron .",
+    "hive": "node dist/cli/index.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^25.5.0",
+    "chalk": "^5.6.2",
+    "chokidar": "^5.0.0",
+    "commander": "^14.0.3",
+    "electron": "^34.5.8",
+    "menubar": "^9.5.2",
+    "node-pty": "^1.1.0",
+    "typescript": "^6.0.2"
+  }
+}
