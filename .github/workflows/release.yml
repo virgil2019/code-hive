@@ -25,15 +25,16 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Build macOS app (arm64 + x64)
-        run: npx electron-builder --mac --arm64 --x64
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build macOS app
+        run: npx electron-builder --mac dmg zip --arm64 --x64
+
+      - name: List build artifacts
+        run: ls -lh release/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release/*.dmg
-            release/*.zip
+            release/*-mac.zip
           generate_release_notes: true
