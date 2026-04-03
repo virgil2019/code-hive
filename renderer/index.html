@@ -342,6 +342,13 @@
       return 4;
     }
 
+    function fullSort(a, b) {
+      const keyDiff = sortKey(a) - sortKey(b);
+      if (keyDiff !== 0) return keyDiff;
+      // Same priority: most recently active first
+      return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+    }
+
     function render(data, forceSort) {
       const { sessions, history } = data;
       const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s]));
@@ -349,7 +356,7 @@
       let ordered;
       if (forceSort || currentOrder.length === 0) {
         // Full sort: on first render, panel open, or refresh
-        sessions.sort((a, b) => sortKey(a) - sortKey(b));
+        sessions.sort(fullSort);
         ordered = sessions;
       } else {
         // Stable update: keep existing order, append new sessions at sorted position
