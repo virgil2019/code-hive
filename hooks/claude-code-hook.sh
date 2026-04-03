@@ -72,7 +72,7 @@ case "$EVENT" in
       --arg pname "$PROJECT_NAME" \
       --arg now "$NOW" \
       --arg tty "$TTY" \
-      '{id:$id,fullSessionId:$sid,tool:"claude-code",project:$project,projectName:$pname,status:"working",startedAt:$now,lastActivity:$now,tty:$tty}' \
+      '{id:$id,fullSessionId:$sid,tool:"claude-code",project:$project,projectName:$pname,status:"stopped",acknowledged:true,startedAt:$now,lastActivity:$now,tty:$tty}' \
       > "$SESSION_FILE.tmp" && mv "$SESSION_FILE.tmp" "$SESSION_FILE"
     ;;
 
@@ -102,7 +102,7 @@ case "$EVENT" in
     notify "$PROJECT_NAME" "Task finished"
     ;;
 
-  PreToolUse)
+  UserPromptSubmit|PreToolUse|PostToolUse)
     ensure_tty
     [ -f "$SESSION_FILE" ] && jq --arg now "$NOW" \
       '.status="working"|.lastActivity=$now|.waitReason=null|.acknowledged=null' \

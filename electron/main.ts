@@ -152,6 +152,7 @@ app.whenReady().then(() => {
     repeat with t in tabs of w
       repeat with s in sessions of t
         if tty of s is "${safeTty}" then
+          set index of w to 1
           select t
           return "found"
         end if
@@ -214,7 +215,7 @@ end tell`;
         if (mb.tray) {
           mb.tray.setTitle(attentionCount > 0 ? ` ${attentionCount}` : "");
         }
-      }, 200);
+      }, 100);
     };
 
     watcher.on("add", debouncedPush);
