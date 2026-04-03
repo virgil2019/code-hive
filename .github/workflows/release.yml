@@ -25,8 +25,8 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Build macOS app
-        run: npx electron-builder --mac dmg zip --arm64 --x64
+      - name: Build macOS app (universal)
+        run: npx electron-builder --mac dmg zip --universal
 
       - name: List build artifacts
         run: ls -lh release/
