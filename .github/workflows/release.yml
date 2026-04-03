@@ -11,6 +11,9 @@ permissions:
 jobs:
   build-mac:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
     steps:
       - uses: actions/checkout@v4
 
@@ -25,16 +28,32 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Build macOS app (universal)
-        run: npx electron-builder --mac dmg zip --universal
+      - name: Build macOS app (${{ matrix.arch }})
+        run: npx electron-builder --mac dmg zip --${{ matrix.arch }}
 
-      - name: List build artifacts
-        run: ls -lh release/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: |
+            release/*.dmg
+            release/*-mac.zip
+
+  release:
+    needs: build-mac
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh artifacts/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/*.dmg
-            release/*-mac.zip
+          files: artifacts/*
           generate_release_notes: true
