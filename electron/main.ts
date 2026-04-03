@@ -97,6 +97,15 @@ function cleanStaleSessionsIfNeeded() {
         mkdirSync(HISTORY_DIR, { recursive: true });
         atomicWrite(join(HISTORY_DIR, f), JSON.stringify(session, null, 2));
         try { unlinkSync(filePath); } catch {}
+      } else if (session.status === "waiting") {
+        // Auto-reset stale waiting: if waiting > 3 min with no update, reset to stopped
+        const lastActivity = new Date(session.lastActivity).getTime();
+        if (now - lastActivity > 3 * 60 * 1000) {
+          session.status = "stopped";
+          session.waitReason = undefined;
+          session.lastActivity = new Date().toISOString();
+          atomicWrite(filePath, JSON.stringify(session, null, 2));
+        }
       }
     } catch {}
   }

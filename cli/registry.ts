@@ -150,6 +150,12 @@ export function cleanStaleSessions() {
 
     if (!alive) {
       updateSession(session.id, { status: "done" });
+    } else if (session.status === "waiting") {
+      // Auto-reset stale waiting: if waiting > 3 min with no update, reset to stopped
+      const lastActivity = new Date(session.lastActivity).getTime();
+      if (Date.now() - lastActivity > 3 * 60 * 1000) {
+        updateSession(session.id, { status: "stopped", waitReason: undefined });
+      }
     }
   }
 }
