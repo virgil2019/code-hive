@@ -19,6 +19,9 @@ const HOOKS_CONFIG = {
   Stop: [
     { matcher: "", hooks: [{ type: "command", command: `${HOOK_SCRIPT_DEST}`, async: true }] }
   ],
+  StopFailure: [
+    { matcher: "", hooks: [{ type: "command", command: `${HOOK_SCRIPT_DEST}`, async: true }] }
+  ],
   UserPromptSubmit: [
     { matcher: "", hooks: [{ type: "command", command: `${HOOK_SCRIPT_DEST}`, async: true }] }
   ],

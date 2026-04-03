@@ -331,17 +331,51 @@
       );
     }
 
-    function render(data) {
-      const { sessions, history } = data;
+    // Track current display order to avoid re-sorting during live updates
+    let currentOrder = []; // array of session IDs in display order
 
-      function sortKey(s) {
-        if (s.status === "waiting") return 0;
-        if (s.status === "stopped" && !s.acknowledged) return 1;
-        if (s.status === "working") return 2;
-        if (s.status === "stopped") return 3;
-        return 4;
+    function sortKey(s) {
+      if (s.status === "waiting") return 0;
+      if (s.status === "stopped" && !s.acknowledged) return 1;
+      if (s.status === "working") return 2;
+      if (s.status === "stopped") return 3;
+      return 4;
+    }
+
+    function render(data, forceSort) {
+      const { sessions, history } = data;
+      const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s]));
+
+      let ordered;
+      if (forceSort || currentOrder.length === 0) {
+        // Full sort: on first render, panel open, or refresh
+        sessions.sort((a, b) => sortKey(a) - sortKey(b));
+        ordered = sessions;
+      } else {
+        // Stable update: keep existing order, append new sessions at sorted position
+        const existing = currentOrder
+          .filter(id => sessionMap[id])
+          .map(id => sessionMap[id]);
+        const newSessions = sessions
+          .filter(s => !currentOrder.includes(s.id))
+          .sort((a, b) => sortKey(a) - sortKey(b));
+        // Insert new sessions at correct positions
+        ordered = [...existing];
+        for (const ns of newSessions) {
+          const nsKey = sortKey(ns);
+          let inserted = false;
+          for (let i = 0; i < ordered.length; i++) {
+            if (nsKey < sortKey(ordered[i])) {
+              ordered.splice(i, 0, ns);
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted) ordered.push(ns);
+        }
       }
-      sessions.sort((a, b) => sortKey(a) - sortKey(b));
+
+      currentOrder = ordered.map(s => s.id);
 
       const listEl = document.getElementById("sessionList");
       const historyEl = document.getElementById("historyList");
@@ -349,10 +383,10 @@
       const badge = document.getElementById("waitingBadge");
 
       listEl.replaceChildren();
-      if (sessions.length === 0) {
+      if (ordered.length === 0) {
         listEl.appendChild(el("div", { className: "empty" }, "No active sessions"));
       } else {
-        sessions.forEach(s => listEl.appendChild(renderSession(s)));
+        ordered.forEach(s => listEl.appendChild(renderSession(s)));
       }
 
       const waitingCount = sessions.filter(s => s.status === "waiting").length;
@@ -391,16 +425,16 @@
       historyToggle.textContent = "Recent ▸";
     });
 
-    // Refresh button
+    // Refresh button: force re-sort
     document.getElementById("refreshBtn").addEventListener("click", () => {
-      window.hive.getSessions().then(render);
+      window.hive.getSessions().then(data => render(data, true));
     });
 
-    // Initial load
-    window.hive.getSessions().then(render);
+    // Initial load: sort
+    window.hive.getSessions().then(data => render(data, true));
 
-    // Live updates (single listener, no accumulation)
-    window.hive.onSessionsUpdate(render);
+    // Live updates: use forceSort flag if sent, otherwise stable order
+    window.hive.onSessionsUpdate(data => render(data, !!data.forceSort));
   </script>
 </body>
 </html>

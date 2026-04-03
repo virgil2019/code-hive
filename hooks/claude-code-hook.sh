@@ -94,19 +94,37 @@ case "$EVENT" in
     esac
     ;;
 
-  Stop)
+  Stop|StopFailure)
     ensure_tty
     [ -f "$SESSION_FILE" ] && jq --arg now "$NOW" \
       '.status="stopped"|.lastActivity=$now|.waitReason=null|.acknowledged=false' \
       "$SESSION_FILE" > "$SESSION_FILE.tmp" && mv "$SESSION_FILE.tmp" "$SESSION_FILE"
-    notify "$PROJECT_NAME" "Task finished"
+    if [ "$EVENT" = "StopFailure" ]; then
+      notify "$PROJECT_NAME" "Task failed"
+    else
+      notify "$PROJECT_NAME" "Task finished"
+    fi
     ;;
 
-  UserPromptSubmit|PreToolUse|PostToolUse)
+  UserPromptSubmit|PreToolUse)
     ensure_tty
     [ -f "$SESSION_FILE" ] && jq --arg now "$NOW" \
       '.status="working"|.lastActivity=$now|.waitReason=null|.acknowledged=null' \
       "$SESSION_FILE" > "$SESSION_FILE.tmp" && mv "$SESSION_FILE.tmp" "$SESSION_FILE"
+    ;;
+
+  PostToolUse)
+    ensure_tty
+    # Only set working if currently waiting (after permission approval)
+    # Don't overwrite stopped (Stop may have fired already)
+    if [ -f "$SESSION_FILE" ]; then
+      CURRENT=$(jq -r '.status' "$SESSION_FILE")
+      if [ "$CURRENT" = "waiting" ]; then
+        jq --arg now "$NOW" \
+          '.status="working"|.lastActivity=$now|.waitReason=null|.acknowledged=null' \
+          "$SESSION_FILE" > "$SESSION_FILE.tmp" && mv "$SESSION_FILE.tmp" "$SESSION_FILE"
+      fi
+    fi
     ;;
 
   SessionEnd)

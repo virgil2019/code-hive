@@ -152,8 +152,8 @@ app.whenReady().then(() => {
     repeat with t in tabs of w
       repeat with s in sessions of t
         if tty of s is "${safeTty}" then
-          set index of w to 1
           select t
+          set index of w to 1
           return "found"
         end if
       end repeat
@@ -229,6 +229,18 @@ end tell`;
     historyWatcher.on("add", debouncedPush);
     historyWatcher.on("change", debouncedPush);
 
-    mb.on("show", debouncedPush);
+    // Panel opened: send with forceSort flag
+    mb.on("show", () => {
+      const sessions = readSessions();
+      const history = readHistory();
+      mb.window?.webContents.send("sessions-update", { sessions, history, forceSort: true });
+
+      const attentionCount = sessions.filter(s =>
+        s.status === "waiting" || (s.status === "stopped" && !s.acknowledged)
+      ).length;
+      if (mb.tray) {
+        mb.tray.setTitle(attentionCount > 0 ? ` ${attentionCount}` : "");
+      }
+    });
   });
 });
