@@ -1,4 +1,4 @@
-import { app, ipcMain } from "electron";
+import { app, ipcMain, nativeImage } from "electron";
 import { menubar } from "menubar";
 import { watch } from "chokidar";
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, unlinkSync, renameSync } from "node:fs";
@@ -183,9 +183,14 @@ end tell`;
     }
   });
 
+  // nativeImage automatically picks up @2x for Retina displays
+  const iconPath = join(__dirname, "..", "..", "renderer", "iconTemplate.png");
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  trayIcon.setTemplateImage(true);
+
   const mb = menubar({
     index: `file://${indexPath}`,
-    icon: join(__dirname, "..", "..", "renderer", "iconTemplate.png"),
+    icon: trayIcon,
     preloadWindow: true,
     browserWindow: {
       width: 360,
