@@ -183,7 +183,7 @@ end tell`;
     }
   });
 
-  // nativeImage automatically picks up @2x for Retina displays
+  // Load icon - nativeImage auto-picks @2x for Retina
   const iconPath = join(__dirname, "..", "..", "renderer", "iconTemplate.png");
   const trayIcon = nativeImage.createFromPath(iconPath);
   trayIcon.setTemplateImage(true);

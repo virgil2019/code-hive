@@ -183,18 +183,22 @@
     .history-dropdown {
       display: none;
       position: absolute;
-      bottom: 32px;
+      bottom: 0;
       left: 0;
       right: 0;
+      padding-bottom: 28px;
+      margin: 0 8px;
+    }
+    .history-dropdown.open { display: block; }
+
+    .history-dropdown-inner {
       background: #252525;
       border: 1px solid #333;
       border-radius: 6px;
-      margin: 0 8px;
       max-height: 192px;
       overflow-y: auto;
       box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
     }
-    .history-dropdown.open { display: block; }
 
     .history-item {
       display: flex;
@@ -412,7 +416,9 @@
       if (history && history.length > 0) {
         historySec.style.display = "block";
         historyEl.replaceChildren();
-        history.forEach(s => historyEl.appendChild(renderHistoryItem(s)));
+        const inner = el("div", { className: "history-dropdown-inner" });
+        history.forEach(s => inner.appendChild(renderHistoryItem(s)));
+        historyEl.appendChild(inner);
       } else {
         historySec.style.display = "none";
       }
@@ -423,13 +429,17 @@
     const historyList = document.getElementById("historyList");
     const historyToggle = document.getElementById("historyToggle");
 
+    let hideTimer = null;
     historySec.addEventListener("mouseenter", () => {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       historyList.classList.add("open");
       historyToggle.textContent = "Recent ▾";
     });
     historySec.addEventListener("mouseleave", () => {
-      historyList.classList.remove("open");
-      historyToggle.textContent = "Recent ▸";
+      hideTimer = setTimeout(() => {
+        historyList.classList.remove("open");
+        historyToggle.textContent = "Recent ▸";
+      }, 200);
     });
 
     // Refresh button: force re-sort
