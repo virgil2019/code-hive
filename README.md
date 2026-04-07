@@ -26,16 +26,16 @@ When you run several Claude Code sessions across iTerm2 tabs, it's easy to lose 
 ## Install
 
 ```bash
-# Clone and build
-git clone <repo-url> && cd code-hive
-npm install
-npm run build
+npm install -g code-hive
+hive install
+hive app
+```
 
-# Install hooks into Claude Code
-npx hive install
+Or without global install:
 
-# Link CLI globally (optional)
-npm link
+```bash
+npx code-hive install
+npx code-hive app
 ```
 
 `hive install` does two things:
@@ -47,20 +47,17 @@ npm link
 ### CLI
 
 ```bash
-# List all active sessions
-hive list
-
-# Include history
-hive list --all
-
-# Live monitoring (auto-refresh on changes)
-hive watch
+hive list           # List active sessions
+hive list --all     # Include history
+hive watch          # Live monitoring (auto-refresh)
+hive app            # Launch menubar app
+hive uninstall      # Remove hooks from Claude Code
 ```
 
 ### Menubar App
 
 ```bash
-npm run app
+hive app
 ```
 
 - Click the menubar icon to see all sessions

@@ -1,8 +1,9 @@
 {
   "name": "code-hive",
-  "version": "0.1.0",
-  "description": "AI CLI session manager for macOS",
+  "version": "0.1.1",
+  "description": "macOS menubar app for tracking and managing multiple Claude Code sessions",
   "type": "module",
+  "os": ["darwin"],
   "bin": {
     "hive": "./dist/cli/index.js"
   },
@@ -12,23 +13,48 @@
     "build:cli": "tsc",
     "build:electron": "tsc -p tsconfig.electron.json",
     "dev": "tsc --watch",
-    "app": "npm run build:electron && electron .",
+    "app": "electron .",
     "hive": "node dist/cli/index.js",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node scripts/postinstall.js",
     "dist": "npm run build && electron-builder --mac",
     "dist:dmg": "npm run build && electron-builder --mac dmg",
     "dist:zip": "npm run build && electron-builder --mac zip"
+  },
+  "files": [
+    "dist/",
+    "electron/preload.cjs",
+    "renderer/",
+    "hooks/",
+    "shared/",
+    "cli/",
+    "scripts/"
+  ],
+  "keywords": [
+    "claude-code",
+    "ai",
+    "cli",
+    "session-manager",
+    "menubar",
+    "macos",
+    "electron"
+  ],
+  "author": "virgil2019",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/virgil2019/code-hive"
   },
   "license": "MIT",
   "dependencies": {
     "chalk": "^5.6.2",
     "chokidar": "^5.0.0",
     "commander": "^14.0.3",
+    "electron": "^34.5.8",
     "menubar": "^9.5.2",
     "node-pty": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "electron": "^34.5.8",
     "electron-builder": "^26.8.1",
     "typescript": "^6.0.2"
   },
@@ -37,10 +63,7 @@
     "productName": "Code Hive",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": [
-        "dmg",
-        "zip"
-      ],
+      "target": ["dmg", "zip"],
       "icon": "build/icon.icns"
     },
     "files": [
@@ -51,13 +74,8 @@
       "node_modules/**/*"
     ],
     "extraResources": [
-      {
-        "from": "hooks/claude-code-hook.sh",
-        "to": "hooks/claude-code-hook.sh"
-      }
+      { "from": "hooks/claude-code-hook.sh", "to": "hooks/claude-code-hook.sh" }
     ],
-    "directories": {
-      "output": "release"
-    }
+    "directories": { "output": "release" }
   }
 }

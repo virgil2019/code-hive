@@ -4,6 +4,7 @@ import { listCommand } from "./commands/list.js";
 import { installCommand } from "./commands/install.js";
 import { watchCommand } from "./commands/watch.js";
 import { runCommand } from "./commands/run.js";
+import { appCommand } from "./commands/app.js";
 
 program
   .name("hive")
@@ -33,5 +34,18 @@ program
   .command("install")
   .description("Install hooks into Claude Code settings")
   .action(installCommand);
+
+program
+  .command("uninstall")
+  .description("Remove hooks from Claude Code settings")
+  .action(async () => {
+    const { uninstallCommand } = await import("./commands/install.js");
+    uninstallCommand();
+  });
+
+program
+  .command("app")
+  .description("Launch the menubar app")
+  .action(appCommand);
 
 program.parse();

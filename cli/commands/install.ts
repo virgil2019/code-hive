@@ -82,5 +82,35 @@ export function installCommand() {
 
   console.log(chalk.bold("\n✅ Done! Claude Code sessions will now be tracked."));
   console.log(chalk.dim("  Run `hive list` to see active sessions."));
-  console.log(chalk.dim("  Run `hive watch` for live monitoring."));
+  console.log(chalk.dim("  Run `hive app` to launch the menubar app."));
+}
+
+export function uninstallCommand() {
+  console.log(chalk.bold("🐝 Removing Code Hive hooks...\n"));
+
+  if (!existsSync(CLAUDE_SETTINGS_PATH)) {
+    console.log(chalk.dim("  No Claude Code settings found. Nothing to do."));
+    return;
+  }
+
+  const settings = JSON.parse(readFileSync(CLAUDE_SETTINGS_PATH, "utf-8"));
+  const hooks = settings.hooks as Record<string, unknown[]> | undefined;
+
+  if (hooks) {
+    for (const event of Object.keys(hooks)) {
+      hooks[event] = (hooks[event] || []).filter((entry: any) =>
+        !entry.hooks?.some((h: any) => h.command?.includes("claude-code-hook.sh"))
+      );
+      if (hooks[event].length === 0) delete hooks[event];
+    }
+    if (Object.keys(hooks).length === 0) delete settings.hooks;
+
+    const tmp = CLAUDE_SETTINGS_PATH + ".tmp";
+    writeFileSync(tmp, JSON.stringify(settings, null, 2));
+    renameSync(tmp, CLAUDE_SETTINGS_PATH);
+    console.log(chalk.green("  ✓") + " Hooks removed from Claude Code settings");
+  }
+
+  console.log(chalk.bold("\n✅ Done! Code Hive hooks removed."));
+  console.log(chalk.dim("  Session data is kept in ~/.code-hive/ — delete manually if needed."));
 }
