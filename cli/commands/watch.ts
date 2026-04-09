@@ -1,7 +1,7 @@
 import { watch } from "node:fs";
 import chalk from "chalk";
 import { SESSIONS_DIR } from "../../shared/types.js";
-import { listSessions, cleanStaleSessions } from "../registry.js";
+import { listSessions } from "../registry.js";
 import { mkdirSync, existsSync } from "node:fs";
 
 export function watchCommand() {
@@ -22,11 +22,6 @@ export function watchCommand() {
       printStatus();
     }, 200);
   });
-
-  // Periodic stale cleanup every 30s
-  setInterval(() => {
-    cleanStaleSessions();
-  }, 30000);
 
   console.log(chalk.dim("\nPress Ctrl+C to stop watching."));
 }

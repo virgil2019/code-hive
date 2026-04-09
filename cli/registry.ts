@@ -134,18 +134,23 @@ function isProcessAlive(pid: number): boolean {
 }
 
 export function cleanStaleSessions() {
+  const now = Date.now();
   for (const session of listSessions()) {
     let alive = true;
+    const lastActivity = new Date(session.lastActivity).getTime();
+    const staleHours = (now - lastActivity) / (60 * 60 * 1000);
 
-    if (session.tty) {
+    // Only clean up if BOTH conditions met:
+    // 1. No activity for 24+ hours
+    // 2. No claude process on the tty (or no tty/pid)
+    if (staleHours < 24) {
+      alive = true;
+    } else if (session.tty) {
       alive = isClaudeOnTty(session.tty);
     } else if (session.pid) {
       alive = isProcessAlive(session.pid);
     } else {
-      const lastActivity = new Date(session.lastActivity).getTime();
-      if (Date.now() - lastActivity > 60 * 60 * 1000) {
-        alive = false;
-      }
+      alive = false;
     }
 
     if (!alive) {

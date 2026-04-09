@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { listSessions, listHistory, cleanStaleSessions } from "../registry.js";
+import { listSessions, listHistory } from "../registry.js";
 import type { Session, SessionStatus } from "../../shared/types.js";
 
 const STATUS_ICON: Record<SessionStatus, string> = {
@@ -49,7 +49,6 @@ function printSession(s: Session) {
 }
 
 export function listCommand(opts: { all?: boolean }) {
-  cleanStaleSessions();
   const sessions = listSessions();
 
   if (sessions.length === 0 && !opts.all) {

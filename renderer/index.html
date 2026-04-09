@@ -7,16 +7,16 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #555; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
     html, body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
       font-size: 13px;
       color: #e0e0e0;
-      background: #1e1e1e;
+      background: #1a1a1a;
       -webkit-app-region: drag;
       user-select: none;
       overflow: hidden;
@@ -32,29 +32,35 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px 8px;
-      border-bottom: 1px solid #333;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       flex-shrink: 0;
     }
 
-    .header h1 { font-size: 14px; font-weight: 600; color: #fff; }
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: 0.3px;
+    }
 
     .header .badge {
-      background: #f5a623;
+      background: linear-gradient(135deg, #f5a623, #e8912d);
       color: #000;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
       border-radius: 10px;
+      letter-spacing: 0.2px;
     }
 
     .section-label {
       padding: 10px 16px 4px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
-      color: #888;
+      color: rgba(255,255,255,0.35);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
       flex-shrink: 0;
     }
 
@@ -68,25 +74,33 @@
     #sessionList {
       flex: 1;
       overflow-y: auto;
+      -webkit-app-region: no-drag;
     }
 
     .empty {
-      padding: 24px 16px;
+      padding: 32px 16px;
       text-align: center;
-      color: #666;
+      color: rgba(255,255,255,0.3);
       font-size: 12px;
     }
 
     .session {
       display: flex;
       align-items: center;
-      padding: 8px 16px;
+      padding: 9px 16px;
       -webkit-app-region: no-drag;
-      transition: background 0.1s;
+      transition: all 0.2s ease;
     }
 
     .session.clickable { cursor: pointer; }
-    .session.clickable:hover { background: #2a2a2a; }
+    .session.clickable:hover {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+    }
+    .session.clickable:active {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
 
     .session .dot {
       width: 8px;
@@ -94,17 +108,35 @@
       border-radius: 50%;
       margin-right: 10px;
       flex-shrink: 0;
+      transition: all 0.3s ease;
     }
 
-    .dot.working { background: #4caf50; }
-    .dot.waiting { background: #f5a623; animation: pulse 1.5s infinite; }
-    .dot.stopped { background: #888; }
-    .dot.stopped-new { background: #5b9bd5; animation: pulse 1.5s infinite; }
-    .dot.done { background: #444; }
+    .dot.working {
+      background: #34d399;
+      box-shadow: 0 0 6px rgba(52,211,153,0.5);
+      animation: glow-green 2s ease-in-out infinite;
+    }
+    .dot.waiting {
+      background: #fbbf24;
+      box-shadow: 0 0 6px rgba(251,191,36,0.5);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .dot.stopped { background: rgba(255,255,255,0.25); }
+    .dot.stopped-new {
+      background: #60a5fa;
+      box-shadow: 0 0 6px rgba(96,165,250,0.5);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .dot.done { background: rgba(255,255,255,0.12); }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @keyframes glow-green {
+      0%, 100% { box-shadow: 0 0 4px rgba(52,211,153,0.3); }
+      50% { box-shadow: 0 0 10px rgba(52,211,153,0.6); }
     }
 
     .session .info { flex: 1; min-width: 0; }
@@ -112,7 +144,7 @@
     .session .info .name {
       font-size: 13px;
       font-weight: 500;
-      color: #fff;
+      color: rgba(255,255,255,0.9);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -120,8 +152,8 @@
 
     .session .info .detail {
       font-size: 11px;
-      color: #888;
-      margin-top: 1px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -129,7 +161,7 @@
 
     .session .info .path {
       font-size: 10px;
-      color: #555;
+      color: rgba(255,255,255,0.2);
       margin-top: 1px;
       white-space: nowrap;
       overflow: hidden;
@@ -142,43 +174,67 @@
       align-items: flex-end;
       flex-shrink: 0;
       margin-left: 8px;
-      gap: 2px;
+      gap: 3px;
     }
 
     .status-tag {
-      font-size: 11px;
+      font-size: 10px;
       padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 500;
+      border-radius: 6px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      transition: all 0.3s ease;
     }
 
-    .status-tag.working { background: #1b3a1b; color: #4caf50; }
-    .status-tag.waiting { background: #3a2e1b; color: #f5a623; }
-    .status-tag.stopped { background: #2a2a2a; color: #888; }
-    .status-tag.stopped-new { background: #1b2a3a; color: #5b9bd5; }
-    .status-tag.done { background: #222; color: #555; }
+    .status-tag.working {
+      background: rgba(52,211,153,0.15);
+      color: #34d399;
+    }
+    .status-tag.waiting {
+      background: rgba(251,191,36,0.15);
+      color: #fbbf24;
+    }
+    .status-tag.stopped {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.35);
+    }
+    .status-tag.stopped-new {
+      background: rgba(96,165,250,0.15);
+      color: #60a5fa;
+    }
+    .status-tag.done {
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.2);
+    }
 
-    .jump-tag { font-size: 10px; color: #666; }
-    .jump-tag.can-jump { color: #5b9bd5; }
+    .jump-tag {
+      font-size: 10px;
+      color: rgba(255,255,255,0.25);
+      transition: color 0.2s;
+    }
+    .jump-tag.can-jump { color: rgba(96,165,250,0.7); }
+    .session.clickable:hover .jump-tag.can-jump { color: #60a5fa; }
 
     .footer {
       padding: 8px 16px;
-      border-top: 1px solid #333;
+      border-top: 1px solid rgba(255,255,255,0.08);
       display: flex;
       justify-content: center;
       gap: 16px;
       position: relative;
       flex-shrink: 0;
+      -webkit-app-region: no-drag;
     }
 
     .footer a, .footer-toggle {
       font-size: 11px;
-      color: #888;
+      color: rgba(255,255,255,0.35);
       cursor: pointer;
       -webkit-app-region: no-drag;
       text-decoration: none;
+      transition: color 0.2s;
     }
-    .footer a:hover, .footer-toggle:hover { color: #fff; }
+    .footer a:hover, .footer-toggle:hover { color: rgba(255,255,255,0.8); }
 
     .history-dropdown {
       display: none;
@@ -192,34 +248,37 @@
     .history-dropdown.open { display: block; }
 
     .history-dropdown-inner {
-      background: #252525;
-      border: 1px solid #333;
-      border-radius: 6px;
+      background: rgba(30,30,30,0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
       max-height: 192px;
       overflow-y: auto;
-      box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.4);
     }
 
     .history-item {
       display: flex;
       align-items: center;
-      padding: 6px 12px;
+      padding: 7px 12px;
       cursor: pointer;
       -webkit-app-region: no-drag;
-      transition: background 0.1s;
+      transition: background 0.15s;
+      border-radius: 4px;
+      margin: 1px 4px;
     }
-    .history-item:hover { background: #2e2e2e; }
+    .history-item:hover { background: rgba(255,255,255,0.08); }
 
     .history-item .hi-name {
       font-size: 12px;
-      color: #ccc;
+      color: rgba(255,255,255,0.75);
       font-weight: 500;
       margin-right: 8px;
       white-space: nowrap;
     }
     .history-item .hi-path {
       font-size: 10px;
-      color: #555;
+      color: rgba(255,255,255,0.25);
       flex: 1;
       white-space: nowrap;
       overflow: hidden;
@@ -227,7 +286,7 @@
     }
     .history-item .hi-time {
       font-size: 10px;
-      color: #555;
+      color: rgba(255,255,255,0.25);
       margin-left: 8px;
       white-space: nowrap;
     }
