@@ -1,4 +1,4 @@
-import { app, ipcMain, nativeImage, Menu } from "electron";
+import { app, ipcMain, nativeImage, Menu, Notification } from "electron";
 import { menubar } from "menubar";
 import { watch } from "chokidar";
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, unlinkSync, renameSync } from "node:fs";
@@ -380,5 +380,91 @@ end tell`;
         mb.tray.setTitle(attentionCount > 0 ? ` ${attentionCount}` : "");
       }
     });
+
+    // Scheduled daily report at 9pm
+    let lastReportDate = "";
+    setInterval(() => {
+      const now = new Date();
+      const hour = now.getHours();
+      const dateStr = now.toISOString().slice(0, 10);
+
+      if (hour === 21 && lastReportDate !== dateStr) {
+        lastReportDate = dateStr;
+
+        const EVENTS_DIR = join(HIVE_DIR, "events");
+        const toTime = new Date(now);
+        toTime.setHours(21, 0, 0, 0);
+        const fromTime = new Date(toTime);
+        fromTime.setDate(fromTime.getDate() - 1);
+
+        // Read event logs
+        const byProject = new Map<string, { events: number; activeMins: number }>();
+        if (existsSync(EVENTS_DIR)) {
+          for (const f of readdirSync(EVENTS_DIR).filter(f => f.endsWith(".log"))) {
+            const content = readFileSync(join(EVENTS_DIR, f), "utf-8");
+            // Group events by project, calculate active time
+            const projWork = new Map<string, Date | null>();
+            const projMins = new Map<string, number>();
+            const projCount = new Map<string, number>();
+
+            for (const line of content.trim().split("\n")) {
+              if (!line) continue;
+              const [timeStr, event, project] = line.split("\t");
+              const time = new Date(timeStr);
+              if (time < fromTime || time > toTime || !project) continue;
+
+              projCount.set(project, (projCount.get(project) || 0) + 1);
+
+              if (event === "UserPromptSubmit" || event === "PreToolUse" || event === "PostToolUse") {
+                if (!projWork.get(project)) projWork.set(project, time);
+              } else if (event === "Stop" || event === "StopFailure" || event === "SessionEnd") {
+                const start = projWork.get(project);
+                if (start) {
+                  const mins = Math.min((time.getTime() - start.getTime()) / 60000, 30);
+                  projMins.set(project, (projMins.get(project) || 0) + mins);
+                  projWork.set(project, null);
+                }
+              }
+            }
+
+            for (const [proj, count] of projCount) {
+              const existing = byProject.get(proj);
+              const mins = Math.round(projMins.get(proj) || 1);
+              if (existing) {
+                existing.events += count;
+                existing.activeMins += mins;
+              } else {
+                byProject.set(proj, { events: count, activeMins: mins });
+              }
+            }
+          }
+        }
+
+        const projects = [...byProject.entries()]
+          .map(([name, d]) => ({ name, ...d }))
+          .sort((a, b) => b.activeMins - a.activeMins);
+        const totalMins = projects.reduce((s, p) => s + p.activeMins, 0);
+
+        const fmt = (m: number) => m < 60 ? `${m}m` : `${Math.floor(m/60)}h${m%60 > 0 ? ` ${m%60}m` : ""}`;
+
+        if (projects.length > 0) {
+          let body = "";
+          for (const p of projects.slice(0, 5)) body += `${p.name}: ${fmt(p.activeMins)}\n`;
+          if (projects.length > 5) body += `...and ${projects.length - 5} more\n`;
+          body += `Total: ${fmt(totalMins)}`;
+
+          // Save report
+          const reportsDir = join(HIVE_DIR, "reports");
+          mkdirSync(reportsDir, { recursive: true });
+          const fromStr = fromTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+          let reportText = `Daily Report — ${fromStr}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+          for (const p of projects) reportText += `  📁 ${p.name.padEnd(25)} ${fmt(p.activeMins).padStart(8)}  (${p.events} events)\n`;
+          reportText += `\n  Total: ${fmt(totalMins)} across ${projects.length} project${projects.length > 1 ? "s" : ""}\n`;
+          writeFileSync(join(reportsDir, `${dateStr}.txt`), reportText);
+
+          new Notification({ title: "Code Hive — Daily Report", body }).show();
+        }
+      }
+    }, 60 * 1000); // Check every minute
   });
 });

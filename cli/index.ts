@@ -5,6 +5,7 @@ import { installCommand } from "./commands/install.js";
 import { watchCommand } from "./commands/watch.js";
 import { runCommand } from "./commands/run.js";
 import { appCommand } from "./commands/app.js";
+import { reportCommand } from "./commands/report.js";
 
 program
   .name("hive")
@@ -42,6 +43,13 @@ program
     const { uninstallCommand } = await import("./commands/install.js");
     uninstallCommand();
   });
+
+program
+  .command("report")
+  .description("Generate daily work report")
+  .option("--from <datetime>", "Start time (default: yesterday 9pm)")
+  .option("--to <datetime>", "End time (default: today 9pm or now)")
+  .action(reportCommand);
 
 program
   .command("app")

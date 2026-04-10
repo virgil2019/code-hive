@@ -5,7 +5,8 @@
 HIVE_DIR="$HOME/.code-hive"
 SESSIONS_DIR="$HIVE_DIR/sessions"
 HISTORY_DIR="$HIVE_DIR/history"
-mkdir -p "$SESSIONS_DIR" "$HISTORY_DIR"
+EVENTS_DIR="$HIVE_DIR/events"
+mkdir -p "$SESSIONS_DIR" "$HISTORY_DIR" "$EVENTS_DIR"
 
 # Parse JSON from stdin safely (no eval)
 INPUT=$(cat)
@@ -60,6 +61,10 @@ notify() {
   message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g')
   osascript -e "display notification \"$message\" with title \"Code Hive\" subtitle \"$title\"" 2>/dev/null &
 }
+
+# Log event for daily reports (append to daily log file)
+LOG_DATE=$(date -u +"%Y-%m-%d")
+printf '%s\t%s\t%s\t%s\n' "$NOW" "$EVENT" "$PROJECT_NAME" "$SHORT_ID" >> "$EVENTS_DIR/$LOG_DATE.log" 2>/dev/null
 
 case "$EVENT" in
   SessionStart)

@@ -3,7 +3,9 @@
   "version": "0.1.1",
   "description": "macOS menubar app for tracking and managing multiple Claude Code sessions",
   "type": "module",
-  "os": ["darwin"],
+  "os": [
+    "darwin"
+  ],
   "bin": {
     "hive": "./dist/cli/index.js"
   },
@@ -46,6 +48,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.87.0",
     "chalk": "^5.6.2",
     "chokidar": "^5.0.0",
     "commander": "^14.0.3",
@@ -63,7 +66,10 @@
     "productName": "Code Hive",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "build/icon.icns"
     },
     "files": [
@@ -74,8 +80,13 @@
       "node_modules/**/*"
     ],
     "extraResources": [
-      { "from": "hooks/claude-code-hook.sh", "to": "hooks/claude-code-hook.sh" }
+      {
+        "from": "hooks/claude-code-hook.sh",
+        "to": "hooks/claude-code-hook.sh"
+      }
     ],
-    "directories": { "output": "release" }
+    "directories": {
+      "output": "release"
+    }
   }
 }
