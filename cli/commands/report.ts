@@ -74,13 +74,38 @@ function findActiveConversations(fromTime: Date, toTime: Date): ConversationSumm
   return results;
 }
 
+function loadEnvConfig(): Record<string, string> {
+  const config: Record<string, string> = {};
+  const envPath = join(HIVE_DIR, ".env");
+  if (existsSync(envPath)) {
+    const content = readFileSync(envPath, "utf-8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^\s*([A-Z_]+)\s*=\s*(.+)\s*$/);
+      if (match) config[match[1]] = match[2].trim().replace(/^["']|["']$/g, "");
+    }
+  }
+  return config;
+}
+
 async function summarizeWithClaude(conversations: ConversationSummary[]): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const envConfig = loadEnvConfig();
+  const apiKey = process.env.ANTHROPIC_API_KEY || envConfig.ANTHROPIC_API_KEY;
+  const baseURL = process.env.ANTHROPIC_BASE_URL || envConfig.ANTHROPIC_BASE_URL;
+  const model = process.env.ANTHROPIC_MODEL || envConfig.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+
   if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY not set. Export it in your shell or add to ~/.code-hive/config");
+    throw new Error(
+      "API key not found. Configure ~/.code-hive/.env:\n\n" +
+      "  ANTHROPIC_API_KEY=your-key\n" +
+      "  ANTHROPIC_BASE_URL=https://api.minimax.chat/v1  # optional\n" +
+      "  ANTHROPIC_MODEL=your-model                      # optional"
+    );
   }
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({
+    apiKey,
+    ...(baseURL ? { baseURL } : {}),
+  });
 
   // Build conversation digest
   let digest = "";
@@ -96,7 +121,7 @@ async function summarizeWithClaude(conversations: ConversationSummary[]): Promis
   }
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model,
     max_tokens: 1024,
     messages: [{
       role: "user",
@@ -114,9 +139,20 @@ Format:
     }],
   });
 
-  const text = response.content[0];
-  if (text.type === "text") return text.text;
-  return "Failed to generate summary.";
+  if (!response.content || response.content.length === 0) {
+    throw new Error("API returned empty response");
+  }
+  // Extract text from any block type (text, thinking, etc.)
+  for (const block of response.content) {
+    if (block.type === "text") return block.text;
+  }
+  // Fallback: try to find any block with text content
+  for (const block of response.content) {
+    const b = block as any;
+    if (b.text) return b.text;
+    if (b.thinking) return b.thinking;
+  }
+  throw new Error(`Unexpected response format: ${JSON.stringify(response.content).slice(0, 200)}`);
 }
 
 export async function reportCommand(opts: { from?: string; to?: string }) {

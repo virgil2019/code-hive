@@ -285,7 +285,18 @@ end tell`;
         } catch {}
       }
 
-      // Discover untracked claude processes
+      // Discover untracked claude processes — re-read sessions dir to avoid races
+      const currentFiles = readdirSync(SESSIONS_DIR).filter(f => f.endsWith(".json") && !f.endsWith(".tmp"));
+      const currentTtys = new Set<string>();
+      const trackedProjects = new Set<string>();
+      for (const f of currentFiles) {
+        try {
+          const s = safeReadJson(join(SESSIONS_DIR, f));
+          if (s?.tty) currentTtys.add(s.tty);
+          if (s?.project) trackedProjects.add(s.project);
+        } catch {}
+      }
+
       try {
         const psOut = execSync(
           `ps -eo tty=,pid=,command= | grep "^ttys" | grep "claude" | grep -v grep`,
@@ -296,17 +307,18 @@ end tell`;
           if (!match) continue;
           const tty = `/dev/${match[1]}`;
           const pid = parseInt(match[2]);
-          if (trackedTtys.has(tty)) continue;
+          if (currentTtys.has(tty)) continue;
 
-          // Get cwd of this claude process
+          // Get cwd from Claude Code's own session file (~/.claude/sessions/{pid}.json)
           try {
-            const cwdOut = execSync(
-              `lsof -p ${pid} -d cwd -Fn 2>/dev/null | grep "^n/" | head -1`,
-              { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"], timeout: 3000 }
-            );
-            const cwd = cwdOut.trim().replace(/^n/, "");
-            // Skip invalid paths: must be a real project directory (at least 2 levels deep)
+            const claudeSessionPath = join(app.getPath("home"), ".claude", "sessions", `${pid}.json`);
+            let cwd = "";
+            if (existsSync(claudeSessionPath)) {
+              const cs = safeReadJson(claudeSessionPath) as any;
+              if (cs?.cwd) cwd = cs.cwd;
+            }
             if (!cwd || cwd === "/" || cwd.split("/").filter(Boolean).length < 2) continue;
+            if (trackedProjects.has(cwd)) continue;
 
             const id = pid.toString(16).slice(0, 8);
             const projectName = cwd.split("/").pop() || cwd;
