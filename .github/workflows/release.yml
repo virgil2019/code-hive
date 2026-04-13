@@ -25,6 +25,19 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
+      - name: Move electron to devDependencies for packaging
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+          if (pkg.dependencies?.electron) {
+            pkg.devDependencies = pkg.devDependencies || {};
+            pkg.devDependencies.electron = pkg.dependencies.electron;
+            delete pkg.dependencies.electron;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          }
+          "
+
       - name: Build macOS app (arm64)
         run: npx electron-builder --mac dmg zip --arm64 -p never
 
